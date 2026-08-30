@@ -1,0 +1,15 @@
+mobile 
+- cd mobile
+- npx expo start -c
+-a
+-r
+
+
+backend
+- cd backend
+- npm run dev
+
+
+database
+- cd backend
+- npm run db:studio
