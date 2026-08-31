@@ -42,7 +42,7 @@ io.on('connection', (socket) => {
   socket.on('send_message', (data) => {
     console.log(`📨 Message from ${data.senderId} to ${data.recipientId}: ${data.message}`);
     
-    // ===== ITO YUNG BAGONG IDINAGDAG: I-echo lang sa recipient, HINDI sa sender =====
+    // ===== ITO ANG TUNAY NA FIX: I-emit LANG sa recipient =====
     io.to(`user_${data.recipientId}`).emit('receive_message', {
       id: data.id || Date.now(),
       senderId: data.senderId,
@@ -51,6 +51,7 @@ io.on('connection', (socket) => {
       createdAt: data.createdAt || new Date().toISOString(),
     });
     
+    // ===== ITO AY TANGGALIN: socket.emit('message_sent', ...) =====
   });
 
   socket.on('typing', (data) => {
