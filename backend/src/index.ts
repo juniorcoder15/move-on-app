@@ -4,6 +4,8 @@ import dotenv from 'dotenv';
 import http from 'http';
 import { Server as SocketServer } from 'socket.io';
 import { db } from './db';
+import { messages } from './db/schema';
+import { and, or, eq } from 'drizzle-orm';
 import authRoutes from './routes/auth';
 import usersRoutes from './routes/users';
 import messagesRoutes from './routes/messages';
@@ -40,6 +42,7 @@ io.on('connection', (socket) => {
   socket.on('send_message', (data) => {
     console.log(`📨 Message from ${data.senderId} to ${data.recipientId}: ${data.message}`);
     
+    // ===== ITO YUNG BAGONG IDINAGDAG: I-echo lang sa recipient, HINDI sa sender =====
     io.to(`user_${data.recipientId}`).emit('receive_message', {
       id: data.id || Date.now(),
       senderId: data.senderId,
@@ -48,11 +51,6 @@ io.on('connection', (socket) => {
       createdAt: data.createdAt || new Date().toISOString(),
     });
     
-    socket.emit('message_sent', {
-      id: data.id || Date.now(),
-      message: data.message,
-      createdAt: data.createdAt || new Date().toISOString(),
-    });
   });
 
   socket.on('typing', (data) => {
@@ -101,6 +99,32 @@ app.get('/', (req, res) => {
       messages: 'GET /api/messages/:userId1/:userId2',
     },
   });
+});
+
+// ===== DELETE MESSAGES (CLEAR CHAT) =====
+app.delete('/api/messages/clear/:userId1/:userId2', async (req, res) => {
+  const { userId1, userId2 } = req.params;
+  
+  try {
+    await db.delete(messages)
+      .where(
+        and(
+          or(
+            eq(messages.senderId, parseInt(userId1)),
+            eq(messages.senderId, parseInt(userId2))
+          ),
+          or(
+            eq(messages.recipientId, parseInt(userId1)),
+            eq(messages.recipientId, parseInt(userId2))
+          )
+        )
+      );
+    
+    res.json({ success: true });
+  } catch (error) {
+    console.error('❌ Error clearing messages:', error);
+    res.status(500).json({ error: 'Failed to clear messages' });
+  }
 });
 
 // ===== START SERVER =====
