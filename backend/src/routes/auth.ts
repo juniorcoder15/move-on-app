@@ -12,7 +12,7 @@ router.post('/register', async (req: Request, res: Response) => {
   console.log('📝 Register request received:', req.body);
   
   try {
-    const { name, email, password } = req.body;
+    const { name, email, password, phone, avatar } = req.body;
 
     if (!name || !email || !password) {
       return res.status(400).json({ error: 'All fields are required' });
@@ -25,10 +25,13 @@ router.post('/register', async (req: Request, res: Response) => {
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
+    // ===== ITO YUNG TAMANG VALUES (may phone at avatar, at passwordHash) =====
     const newUser = await db.insert(users).values({
       name,
       email,
-      password: hashedPassword,
+      passwordHash: hashedPassword,
+      phone: phone || '',
+      avatar: avatar || '👤',
     }).returning();
 
     const token = jwt.sign(
@@ -45,6 +48,8 @@ router.post('/register', async (req: Request, res: Response) => {
         id: newUser[0].id,
         name: newUser[0].name,
         email: newUser[0].email,
+        phone: newUser[0].phone,
+        avatar: newUser[0].avatar,
         createdAt: newUser[0].createdAt,
       },
     });
@@ -64,12 +69,27 @@ router.post('/login', async (req: Request, res: Response) => {
       return res.status(400).json({ error: 'Email and password are required' });
     }
 
-    const user = await db.select().from(users).where(eq(users.email, email));
+    // ===== ITO YUNG TAMANG CHECK: Hanapin ang passwordHash, HINDI password =====
+    const user = await db.select({
+      id: users.id,
+      name: users.name,
+      email: users.email,
+      phone: users.phone,
+      avatar: users.avatar,
+      passwordHash: users.passwordHash,
+      createdAt: users.createdAt,
+    }).from(users).where(eq(users.email, email));
+    
     if (user.length === 0) {
       return res.status(401).json({ error: 'Invalid credentials' });
     }
 
-    const isValid = await bcrypt.compare(password, user[0].password);
+    // ===== ITO YUNG TAMANG CHECK: Kung walang passwordHash, mag-error =====
+    if (!user[0].passwordHash) {
+      return res.status(400).json({ error: 'Password not set for this user' });
+    }
+
+    const isValid = await bcrypt.compare(password, user[0].passwordHash);
     if (!isValid) {
       return res.status(401).json({ error: 'Invalid credentials' });
     }
@@ -88,6 +108,8 @@ router.post('/login', async (req: Request, res: Response) => {
         id: user[0].id,
         name: user[0].name,
         email: user[0].email,
+        phone: user[0].phone,
+        avatar: user[0].avatar,
         createdAt: user[0].createdAt,
       },
     });

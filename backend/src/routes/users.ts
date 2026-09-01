@@ -65,7 +65,6 @@ router.get('/:id', async (req: Request, res: Response) => {
 // ===== UPDATE USER (PUT) =====
 router.put('/:id', async (req: Request, res: Response) => {
   try {
-    // ✅ I-check ang ID
     const idParam = req.params.id;
     if (typeof idParam !== 'string') {
       return res.status(400).json({ error: 'Invalid user ID' });
@@ -76,15 +75,12 @@ router.put('/:id', async (req: Request, res: Response) => {
       return res.status(400).json({ error: 'Invalid user ID' });
     }
     
-    // ✅ Kunin ang data mula sa request body
     const { name, phone, avatar } = req.body;
     
-    // ✅ Siguraduhing may valid na data na pinadala
     if (!name && !phone && !avatar) {
       return res.status(400).json({ error: 'No fields to update' });
     }
     
-    // ✅ I-update ang user sa database gamit ang Drizzle ORM
     const updatedUser = await db.update(users)
       .set({
         ...(name ? { name } : {}),

@@ -1,27 +1,22 @@
-import { pgTable, serial, text, varchar, timestamp, integer } from 'drizzle-orm/pg-core';
+import { pgTable, serial, integer, text, timestamp, boolean, varchar } from 'drizzle-orm/pg-core';
 
+// ===== USERS =====
 export const users = pgTable('users', {
   id: serial('id').primaryKey(),
-  email: varchar('email', { length: 255 }).notNull().unique(),
-  password: text('password').notNull(),
   name: varchar('name', { length: 255 }).notNull(),
-  avatar: varchar('avatar', { length: 10 }).default('👤'),
-  phone: varchar('phone', { length: 20 }).default('+63 900 0000 000'),
-  createdAt: timestamp('created_at').defaultNow().notNull(),
-  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+  email: varchar('email', { length: 255 }).notNull(),
+  passwordHash: varchar('password_hash', { length: 255 }).notNull(),
+  phone: varchar('phone', { length: 255 }),
+  avatar: varchar('avatar', { length: 255 }),
+  createdAt: timestamp('created_at').defaultNow(),
 });
 
-// ✅ NEW: Messages table
+// ===== MESSAGES =====
 export const messages = pgTable('messages', {
   id: serial('id').primaryKey(),
   senderId: integer('sender_id').notNull(),
   recipientId: integer('recipient_id').notNull(),
   message: text('message').notNull(),
-  read: integer('read').default(0), // 0 = unread, 1 = read
-  createdAt: timestamp('created_at').defaultNow().notNull(),
+  is_read: boolean('is_read').default(false),
+  createdAt: timestamp('created_at').defaultNow(),
 });
-
-export type User = typeof users.$inferSelect;
-export type NewUser = typeof users.$inferInsert;
-export type Message = typeof messages.$inferSelect;
-export type NewMessage = typeof messages.$inferInsert;
