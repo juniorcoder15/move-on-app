@@ -5,37 +5,7 @@ import { and, or, eq } from 'drizzle-orm';
 
 const router = Router();
 
-// ===== GET UNREAD MESSAGES (ITO DAPAT NASA UNA!) =====
-router.get('/unread/:userId', async (req: Request, res: Response) => {
-  try {
-    const userId = parseInt(req.params.userId as string, 10);
-    if (isNaN(userId)) {
-      return res.status(400).json({ error: 'Invalid user ID' });
-    }
-    
-    const unreadMessages = await db.select({
-      id: messages.id,
-      senderId: messages.senderId,
-      recipientId: messages.recipientId,
-      message: messages.message,
-      createdAt: messages.createdAt,
-    })
-    .from(messages)
-    .where(
-      and(
-        eq(messages.recipientId, userId),
-        eq(messages.is_read, false)
-      )
-    );
-    
-    res.json(unreadMessages);
-  } catch (error) {
-    console.error('❌ Error fetching unread messages:', error);
-    res.status(500).json({ error: 'Failed to fetch unread messages' });
-  }
-});
-
-// ===== GET MESSAGES BETWEEN TWO USERS (MAS MAUNA) =====
+// ===== GET MESSAGES BETWEEN TWO USERS (MAY TAMANG SENDER/RECIPIENT CHECK) =====
 router.get('/:userId1/:userId2', async (req: Request, res: Response) => {
   try {
     const userId1 = parseInt(req.params.userId1 as string, 10);
@@ -56,12 +26,14 @@ router.get('/:userId1/:userId2', async (req: Request, res: Response) => {
     .where(
       and(
         or(
-          eq(messages.senderId, userId1),
-          eq(messages.senderId, userId2)
-        ),
-        or(
-          eq(messages.recipientId, userId1),
-          eq(messages.recipientId, userId2)
+          and(
+            eq(messages.senderId, userId1),
+            eq(messages.recipientId, userId2)
+          ),
+          and(
+            eq(messages.senderId, userId2),
+            eq(messages.recipientId, userId1)
+          )
         )
       )
     )
